@@ -65,7 +65,7 @@ class Digital5View extends Ui.WatchFace {
     var sunsetText         = "--:--";
     var currentWeather;
     var digitalUpright72, digitalUpright26, digitalUpright24, digitalUpright20, digitalUpright16;
-    //var robotoCondensed72;
+    var robotoCondensed72;
     var burnedIcon, burnedIconWhite, stepsIcon, stepsIconWhite;
     var alarmIcon, alarmIconWhite;
     var width, height;
@@ -104,7 +104,7 @@ class Digital5View extends Ui.WatchFace {
         digitalUpright24 = Ui.loadResource(Rez.Fonts.digitalUpright24);
         digitalUpright20 = Ui.loadResource(Rez.Fonts.digitalUpright20);
         digitalUpright16 = Ui.loadResource(Rez.Fonts.digitalUpright16);
-        //robotoCondensed72 = Ui.loadResource(Rez.Fonts.robotoCondensed72);
+        robotoCondensed72 = Ui.loadResource(Rez.Fonts.robotoCondensed72);
         burnedIcon = Ui.loadResource(Rez.Drawables.burned);
         burnedIconWhite = Ui.loadResource(Rez.Drawables.burnedWhite);
         stepsIcon = Ui.loadResource(Rez.Drawables.steps);
@@ -510,7 +510,7 @@ class Digital5View extends Ui.WatchFace {
         var dateTimeText = calcHomeDateTime();
 
         // draw Time
-        var timeFont = digitalUpright72 ;
+        var timeFont = lcdFont ? digitalUpright72 : robotoCondensed72 ;
         var timeFontSize = Graphics.getFontHeight(timeFont);
         var timeYPosition = dateYPosition - timeFontSize + 10;
         secondsFont = digitalUpright20;
