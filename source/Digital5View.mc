@@ -18,8 +18,8 @@ class Digital5View extends Ui.WatchFace {
 	var debug = true;
     var is24Hour;
     var secondsAlwaysOn;
-    var lcdFont = false;	
-    var lcdFontDataFields = false;
+    var lcdFont;	
+    var lcdFontDataFields;
     var showLeadingZero;
     var clockTime;
     var sunRiseSet;
@@ -65,7 +65,7 @@ class Digital5View extends Ui.WatchFace {
     var sunsetText         = "--:--";
     var currentWeather;
     var digitalUpright72, digitalUpright26, digitalUpright24, digitalUpright20, digitalUpright16;
-    var robotoCondensed72;
+    var robotoCondensed72, robotoCondensed24, roboto26, robotoCondensed7;
     var burnedIcon, burnedIconWhite, stepsIcon, stepsIconWhite;
     var alarmIcon, alarmIconWhite;
     var width, height;
@@ -93,6 +93,9 @@ class Digital5View extends Ui.WatchFace {
     var secondsFont = 0;
     var secondsYPosition = 0;
     
+    var timeFont;
+    var dateTimeFont;
+    var amPmFont;
 
     function initialize() {
         WatchFace.initialize();
@@ -105,6 +108,9 @@ class Digital5View extends Ui.WatchFace {
         digitalUpright20 = Ui.loadResource(Rez.Fonts.digitalUpright20);
         digitalUpright16 = Ui.loadResource(Rez.Fonts.digitalUpright16);
         robotoCondensed72 = Ui.loadResource(Rez.Fonts.robotoCondensed72);
+        roboto26 = Ui.loadResource(Rez.Fonts.roboto26);
+        robotoCondensed24 = Ui.loadResource(Rez.Fonts.robotoCondensed24);
+        robotoCondensed7 = Ui.loadResource(Rez.Fonts.robotoCondensed7);
         burnedIcon = Ui.loadResource(Rez.Drawables.burned);
         burnedIconWhite = Ui.loadResource(Rez.Drawables.burnedWhite);
         stepsIcon = Ui.loadResource(Rez.Drawables.steps);
@@ -153,8 +159,8 @@ class Digital5View extends Ui.WatchFace {
 
         is24Hour                  = Sys.getDeviceSettings().is24Hour;
         secondsAlwaysOn           = App.getApp().getProperty("SecondsAlwaysOn");
-        //lcdFont                   = App.getApp().getProperty("LcdFont");	
-        //lcdFontDataFields         = App.getApp().getProperty("LcdFontDataFields");
+        lcdFont                   = App.getApp().getProperty("LcdFont");	
+        lcdFontDataFields         = App.getApp().getProperty("LcdFontDataFields");
         showLeadingZero           = App.getApp().getProperty("ShowLeadingZero");
         tempUnit                  = App.getApp().getProperty("TempUnit");
         coloredCalorieText        = App.getApp().getProperty("ColorizeCalorieText");
@@ -236,6 +242,17 @@ class Digital5View extends Ui.WatchFace {
             minuteColor = upperForegroundColor;
         }
 
+		if (lcdFont) {
+			timeFont = digitalUpright72 ;
+			dateTimeFont = digitalUpright26;
+			amPmFont = digitalUpright20;
+		}
+		else {
+			timeFont = robotoCondensed72 ;
+			dateTimeFont = roboto26;
+			amPmFont = robotoCondensed24;
+		}
+		
 
         // Mifflin-St.Jeor Formula (1990)
         var baseKcalMen   = (9.99 * userWeight) + (6.25 * userHeight) - (4.92 * userAge) + 5.0;             // base kcal men
@@ -503,18 +520,18 @@ class Digital5View extends Ui.WatchFace {
         
         // Date and home timezone
         dc.setColor(upperForegroundColor, upperBackgroundColor);
-        var dateTimeFont = digitalUpright26;
         var dateTimefontSize = Graphics.getFontHeight(dateTimeFont);
         var dateYPosition = dataFieldsTop - 9  - dateTimefontSize;
         var dateXPosition = centerX - 99;
         var dateTimeText = calcHomeDateTime();
 
         // draw Time
-        var timeFont = lcdFont ? digitalUpright72 : robotoCondensed72 ;
         var timeFontSize = Graphics.getFontHeight(timeFont);
         var timeYPosition = dateYPosition - timeFontSize + 10;
-        secondsFont = digitalUpright20;
-        secondsYPosition = dateYPosition - Graphics.getFontHeight(secondsFont);
+        var yCorrection = 0;
+        if (lcdFont) { yCorrection = - 4; }
+        secondsFont = amPmFont;
+        secondsYPosition = dateYPosition - Graphics.getFontHeight(secondsFont) + yCorrection;
         
         if (lcdFont && lcdBackgroundVisible) {
             dc.setColor(darkUpperBackground ? Gfx.COLOR_DK_GRAY : Gfx.COLOR_LT_GRAY, upperBackgroundColor);
@@ -544,8 +561,8 @@ class Digital5View extends Ui.WatchFace {
         // draw Calendar Week
         if (showCalendarWeek) {
             var calendarWeekText = Ui.loadResource(Rez.Strings.CalendarWeek);
-            dc.drawText(centerX - 77, secondsYPosition - Graphics.getFontHeight(digitalUpright20), digitalUpright20, (calendarWeekText), Gfx.TEXT_JUSTIFY_RIGHT);
-            dc.drawText(centerX - 77, secondsYPosition, digitalUpright20, (getWeekOfYear(nowinfo)), Gfx.TEXT_JUSTIFY_RIGHT);
+            dc.drawText(centerX - 75, secondsYPosition - Graphics.getFontHeight(amPmFont), amPmFont, (calendarWeekText), Gfx.TEXT_JUSTIFY_RIGHT);
+            dc.drawText(centerX - 75, secondsYPosition, amPmFont, (getWeekOfYear(nowinfo)), Gfx.TEXT_JUSTIFY_RIGHT);
         }
 
         // draw Sunrise/Sunset
@@ -830,7 +847,7 @@ class Digital5View extends Ui.WatchFace {
                 fieldText = null == pressure ? "-" : ((pressure.data.toFloat() + pressureOffset) / 100.0).format("%.2f");
                 unitText = "mb";
                 break;
-            case 13: // Weather
+            case 13: // 
                 if (apiKey.length() > 0) {
                     if (field == BOTTOM_FIELD) { textX += 10; }
                     var icon = 7;
@@ -861,7 +878,7 @@ class Digital5View extends Ui.WatchFace {
                             fieldText = tempMin.format("%.0f") + "/" + tempMax.format("%.0f");
                         }
                     }
-                    drawWeatherSymbol(field, icon, dc, xyPositions);
+                    drawSymbol(field, icon, dc, xyPositions);
                 } else {
                     fieldText = "--/--";
                 }
@@ -874,6 +891,8 @@ class Digital5View extends Ui.WatchFace {
     }
     
     function drawUnitText(xyPositions, dc, unitText, field){
+        var bmpX = xyPositions[0] + 84 ;
+        var bmpY = xyPositions[1] - 4;
         var unitLcdX = xyPositions[4];
         var unitLcdY = xyPositions[5];
         var unitX    = xyPositions[6];
@@ -882,29 +901,36 @@ class Digital5View extends Ui.WatchFace {
         if (field == BOTTOM_FIELD){
             switch(unitText.toLower()){
             case "km":
-                drawCharacter(xyPositions, dc, K, 0);
-                drawCharacter(xyPositions, dc, M, 6);
+                //drawCharacter(xyPositions, dc, K, 0);
+                //drawCharacter(xyPositions, dc, M, 6);
+                dc.drawText(bmpX, bmpY, robotoCondensed7, unitText, Gfx.TEXT_JUSTIFY_LEFT);
                 break;
             case "mi":
-                drawCharacter(xyPositions, dc, M, 0);
-                drawCharacter(xyPositions, dc, I, 0);
+                //drawCharacter(xyPositions, dc, M, 0);
+                //drawCharacter(xyPositions, dc, I, 0);
+                dc.drawText(bmpX, bmpY, robotoCondensed7, unitText, Gfx.TEXT_JUSTIFY_LEFT);
                 break;
             case "m":
-                drawCharacter(xyPositions, dc, M, -5);
+                //drawCharacter(xyPositions, dc, M, -5);
+                dc.drawText(bmpX, bmpY, robotoCondensed7, unitText, Gfx.TEXT_JUSTIFY_LEFT);
                 break;
             case "ft":
-                drawCharacter(xyPositions, dc, F, 0);
-                drawCharacter(xyPositions, dc, T, 0);
+                //drawCharacter(xyPositions, dc, F, 0);
+                //drawCharacter(xyPositions, dc, T, 0);
+                dc.drawText(bmpX, bmpY, robotoCondensed7, unitText, Gfx.TEXT_JUSTIFY_LEFT);
                 break;
             case "mb":
-                drawCharacter(xyPositions, dc, M, 0);
-                drawCharacter(xyPositions, dc, B, 0);
+                //drawCharacter(xyPositions, dc, M, 0);
+                //drawCharacter(xyPositions, dc, B, 0);
+                dc.drawText(bmpX, bmpY, robotoCondensed7, unitText, Gfx.TEXT_JUSTIFY_LEFT);
                 break;
             case "c":
-                drawCharacter(xyPositions, dc, C, 6);
+                //drawCharacter(xyPositions, dc, C, 6);
+                dc.drawText(bmpX, bmpY, robotoCondensed7, unitText, Gfx.TEXT_JUSTIFY_LEFT);
                 break;
             case "f":
-                drawCharacter(xyPositions, dc, F, 6);
+                //drawCharacter(xyPositions, dc, F, 6);
+                dc.drawText(bmpX, bmpY, robotoCondensed7, unitText, Gfx.TEXT_JUSTIFY_LEFT);
                 break;
             }          
             return;
@@ -1077,7 +1103,7 @@ class Digital5View extends Ui.WatchFace {
         dc.drawText(textX, textY, GetFieldFont(field, false), getActKcalAvg(activeKcal), horAlign);
     }
     
-    function drawWeatherSymbol(field, icon, dc, xyPositions) {
+    function drawSymbol(field, icon, dc, xyPositions) {
         var x = xyPositions[0];
         var y = xyPositions[1];
 
@@ -1181,10 +1207,10 @@ class Digital5View extends Ui.WatchFace {
         	var xBase = centerX + 70 + 3;
         	var yBase = secondsYPosition;
         	if (secondsAlwaysOn) {
-        	    yBase = yBase - Graphics.getFontHeight(digitalUpright20);
+        	    yBase = yBase - Graphics.getFontHeight(amPmFont);
         	}
             var amPm = clockTime.hour < 12 ? "am" : "pm";
-            dc.drawText(xBase, yBase, digitalUpright20, amPm, Gfx.TEXT_JUSTIFY_LEFT);
+            dc.drawText(xBase, yBase, amPmFont, amPm, Gfx.TEXT_JUSTIFY_LEFT);
         }
     }
 
@@ -1369,9 +1395,6 @@ class Digital5View extends Ui.WatchFace {
         }
     
        if (fieldNumber == BOTTOM_FIELD) {
-             if (isUnitText){
-                return Graphics.FONT_XTINY;
-             }
              return digitalUpright20;
        }
 
