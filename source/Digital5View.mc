@@ -64,7 +64,7 @@ class Digital5View extends Ui.WatchFace {
     var sunsetText         = "--:--";
     var currentWeather;
     var digitalUpright72, digitalUpright26, digitalUpright24, digitalUpright20, digitalUpright16;
-    var robotoCondensed72, robotoCondensed24, roboto26, robotoCondensed7;
+    var robotoCondensed72, robotoCondensed24, roboto26, robotoCondensed7, robotoCondensed20;
     var burnedIcon, burnedIconWhite, stepsIcon, stepsIconWhite;
     var alarmIcon, alarmIconWhite;
     var width, height;
@@ -117,6 +117,7 @@ class Digital5View extends Ui.WatchFace {
         roboto26 = Ui.loadResource(Rez.Fonts.roboto26);
         robotoCondensed24 = Ui.loadResource(Rez.Fonts.robotoCondensed24);
         robotoCondensed7 = Ui.loadResource(Rez.Fonts.robotoCondensed7);
+        robotoCondensed20 = Ui.loadResource(Rez.Fonts.robotoCondensed20);
         burnedIcon = Ui.loadResource(Rez.Drawables.burned);
         burnedIconWhite = Ui.loadResource(Rez.Drawables.burnedWhite);
         stepsIcon = Ui.loadResource(Rez.Drawables.steps);
@@ -578,8 +579,8 @@ class Digital5View extends Ui.WatchFace {
             calcSunriseSunset();
             drawArrow(dc, centerX - 70, sunRiseY, 0);
             drawArrow(dc, centerX + 60, sunRiseY, 1);
-            dc.drawText(centerX - 50, sunRiseY - 5, digitalUpright16, sunriseText, Gfx.TEXT_JUSTIFY_LEFT);
-            dc.drawText(centerX + 55 , sunRiseY - 5, digitalUpright16, sunsetText, Gfx.TEXT_JUSTIFY_RIGHT);
+            dc.drawText(centerX - 50, sunRiseY - 5, lcdFont ? digitalUpright16 : robotoCondensed20, sunriseText, Gfx.TEXT_JUSTIFY_LEFT);
+            dc.drawText(centerX + 55 , sunRiseY - 5, lcdFont ? digitalUpright16 : robotoCondensed20, sunsetText, Gfx.TEXT_JUSTIFY_RIGHT);
         }
 
 
@@ -1145,7 +1146,7 @@ class Digital5View extends Ui.WatchFace {
         dc.drawText(textX, textY, GetFieldFont(field, false), getActKcalAvg(activeKcal), horAlign);
     }
     
-    function drawSymbol(field, icon, dc, xyPositions) {
+    function drawWeatherSymbol(field, icon, dc, xyPositions) {
         var x = xyPositions[0];
         var y = xyPositions[1];
 
@@ -1430,20 +1431,14 @@ class Digital5View extends Ui.WatchFace {
     }
     
     function GetFieldFont(fieldNumber, isUnitText) {
-        var tinyFont = Graphics.FONT_XTINY;
-
-        if (width > 240 and !isUnitText){
-            tinyFont = Graphics.FONT_TINY;
-        }
-    
        if (fieldNumber == BOTTOM_FIELD) {
-             return digitalUpright20;
+             return lcdFontDataFields ? digitalUpright20 : robotoCondensed24;
        }
 
        if (isUnitText){
-             return digitalUpright16;
+             return lcdFontDataFields ? digitalUpright16 : robotoCondensed7;
        }
-       return digitalUpright24;
+       return lcdFontDataFields ? digitalUpright24 : robotoCondensed24;
     }
     
     /// <summary>
@@ -1518,16 +1513,6 @@ class Digital5View extends Ui.WatchFace {
             timeText = Lang.format("$1$:$2$", [homeHour.format(showLeadingZero ? "%02d" : "%01d"), homeMinute.format("%02d")]) + ampm;
         }
 
-
         return [monthText, timeText];
     }
-    
-    //function Log(method, message){
-   // 	if ($.debug){
-   // 	
-   //       var myTime = System.getClockTime(); 
-   //       var myTimeString = myTime.hour.format("%02d") + ":" + myTime.min.format("%02d") + ":" + myTime.sec.format("%02d");
-   //       if ($.debug) {System.println(myTimeString + " | " + method + " | " + message);}
-   //     }
-   // }
 }

@@ -84,6 +84,8 @@ class Digital5ReloadedApp extends App.AppBase {
             } else {
                 App.getApp().setProperty("icon", 7);
             }
+            
+            WatchUi.requestUpdate();
         }
     }
 
