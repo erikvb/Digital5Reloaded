@@ -352,9 +352,13 @@ class Digital5View extends Ui.WatchFace {
             dc.drawText(centerX, 1, digitalUpright20, charge.toNumber(), Gfx.TEXT_JUSTIFY_CENTER);
 
             // Percentage Sign
-            dc.drawLine(centerX + 20 - batteryIconOffsetX, 16, centerX + 28 - batteryIconOffsetX, 6);
-            dc.drawRectangle(centerX + 20 - batteryIconOffsetX, 7, 3, 3);
-            dc.drawRectangle(centerX + 26 - batteryIconOffsetX, 14, 3, 3);
+            var batOffset = batteryIconOffsetX;
+            if (charge >= 98.5){
+            	batOffset = 0;
+            }
+            dc.drawLine(centerX + 20 - batOffset, 16, centerX + 28 - batOffset, 6);
+            dc.drawRectangle(centerX + 20 - batOffset, 7, 3, 3);
+            dc.drawRectangle(centerX + 26 - batOffset, 14, 3, 3);
 
             // Vertical Battery
             dc.setColor(upperForegroundColor, upperBackgroundColor);
@@ -564,7 +568,7 @@ class Digital5View extends Ui.WatchFace {
         if (showCalendarWeek) {
             var calendarWeekText = Ui.loadResource(Rez.Strings.CalendarWeek);
             dc.drawText(centerX - 75, secondsYPosition - Graphics.getFontHeight(amPmFont), amPmFont, (calendarWeekText), Gfx.TEXT_JUSTIFY_RIGHT);
-            dc.drawText(centerX - 75, secondsYPosition, amPmFont, (getWeekOfYear(nowinfo)), Gfx.TEXT_JUSTIFY_RIGHT);
+            dc.drawText(centerX - 75, secondsYPosition, amPmFont, (iso_week_number(nowinfo.year, nowinfo.month, nowinfo.day)), Gfx.TEXT_JUSTIFY_RIGHT);
         }
 
         // draw Sunrise/Sunset
@@ -574,8 +578,15 @@ class Digital5View extends Ui.WatchFace {
             calcSunriseSunset();
             drawArrow(dc, .4 * centerX, sunRiseY, 0);
             drawArrow(dc, 1.5 * centerX, sunRiseY, 1);
-            dc.drawText(.4 * centerX + 15, sunRiseY - 5, lcdFont ? digitalUpright20 : robotoCondensed24, sunriseText, Gfx.TEXT_JUSTIFY_LEFT);
-            dc.drawText(1.5 * centerX - 5, sunRiseY - 5, lcdFont ? digitalUpright20 : robotoCondensed24, sunsetText, Gfx.TEXT_JUSTIFY_RIGHT);
+            if (width < 280){
+              dc.drawText(.4 * centerX + 15, sunRiseY - 5, lcdFont ? digitalUpright16 : robotoCondensed20, sunriseText, Gfx.TEXT_JUSTIFY_LEFT);
+              dc.drawText(1.5 * centerX - 5, sunRiseY - 5, lcdFont ? digitalUpright16 : robotoCondensed20, sunsetText, Gfx.TEXT_JUSTIFY_RIGHT);
+            } 
+            else {
+              dc.drawText(.4 * centerX + 15, sunRiseY - 5, lcdFont ? digitalUpright20 : robotoCondensed24, sunriseText, Gfx.TEXT_JUSTIFY_LEFT);
+              dc.drawText(1.5 * centerX - 5, sunRiseY - 5, lcdFont ? digitalUpright20 : robotoCondensed24, sunsetText, Gfx.TEXT_JUSTIFY_RIGHT);
+            }
+            
         }
 
 
@@ -1307,32 +1318,68 @@ class Digital5View extends Ui.WatchFace {
         var activeMinutes  = (actMinutes % 60).toNumber();
         return Lang.format("$1$:$2$", [activeHours.format(showLeadingZero ? "%02d" : "%01d"), activeMinutes.format("%02d")]);
     }
+    
+	function julian_day(year, month, day)
+	{
+		var a = (14 - month) / 12;
+		var y = (year + 4800 - a);
+		var m = (month + 12 * a - 3);
+		return day + ((153 * m + 2) / 5) + (365 * y) + (y / 4) - (y / 100) + (y / 400) - 32045;
+	}
+	
+	function is_leap_year(year)
+	{
+		if (year % 4 != 0) {
+			return false;
+		}
+		else if (year % 100 != 0) {
+			return true;
+		}
+		else if (year % 400 == 0) {
+			return true;
+		}
 
-    function getWeekOfYear(nowinfo) {
-        var year          = nowinfo.year;
-        var isLeapYear    = year % 4 == 0;
-        var month         = nowinfo.month;
-        var day           = nowinfo.day;
-        var dayOfYear     = DAY_COUNT[month - 1] + day;
-        var dayOfWeek     = nowinfo.day_of_week - 1;
-        if (month > 0 && isLeapYear) { dayOfYear++; }
-        if (0 == dayOfWeek) { dayOfWeek = 7; }
-        var kw            = 1 + 4 * (month - 1) + ( 2 * (month - 1) + day - 1 - dayOfWeek + 6 ) * 36 / 256;
-        var dayOfWeek0101 = getDayOfWeek(year, 1, 1);
-        return kw.toNumber();
-    }
+		return false;
+	}
 
-    function getDayOfWeek(year, month, day) {
-        var dayOfYear   = DAY_COUNT[month - 1] + day;
-        var yearOrdinal = dayOfYear;
-        var a = (year - 1901) % 28;
-        var b = Math.floor(a / 4);
-        var weekOrdinal = (2 + a + b) % 7 + 1;
-        var dow = ((yearOrdinal - 1) + (weekOrdinal - 1)) % 7 + 1 - 1;
-        if (0 == dow) { dow = 7; }
-        return dow;
-    }
+	function iso_week_number(year, month, day)
+	{
+		var first_day_of_year = julian_day(year, 1, 1);
+		var given_day_of_year = julian_day(year, month, day);
 
+		var day_of_week = (first_day_of_year + 3) % 7; // days past thursday
+		var week_of_year = (given_day_of_year - first_day_of_year + day_of_week + 4) / 7;
+
+		// week is at end of this year or the beginning of next year
+		if (week_of_year == 53) {
+
+			if (day_of_week == 6) {
+				return week_of_year;
+			}
+			else if (day_of_week == 5 && is_leap_year(year)) {
+				return week_of_year;
+			}
+			else {
+				return 1;
+			}
+		}
+
+		// week is in previous year, try again under that year
+		else if (week_of_year == 0) {
+			first_day_of_year = julian_day(year - 1, 1, 1);
+
+			day_of_week = (first_day_of_year + 3) % 7;
+
+			return (given_day_of_year - first_day_of_year + day_of_week + 4) / 7;
+		}
+
+		// any old week of the year
+		else {
+			return week_of_year;
+		}
+	}
+
+	
     function getActKcalAvg(actKcal) {
         var actKcalAvg = App.getApp().getProperty("ActKcalAvg");
         var sum   = 0.0;
